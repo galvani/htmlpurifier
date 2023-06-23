@@ -222,22 +222,25 @@ class HTMLPurifier_DefinitionCache_Serializer extends HTMLPurifier_DefinitionCac
                     'Could not create directory ' . $directory . '',
                     E_USER_WARNING
                 );
-                return false;
             }
             return true;
         }
         if (!is_dir($directory)) {
             $base = $this->generateBaseDirectoryPath($config);
             if (!is_dir($base)) {
-                trigger_error(
-                    'Base directory ' . $base . ' does not exist,
-                    please create or change using %Cache.SerializerPath',
-                    E_USER_WARNING
-                );
-                return false;
-            } elseif (!$this->_testPermissions($base, $chmod)) {
+                if (!@mkdir($base, $chmod) && !is_dir($base)) {
+                    trigger_error(
+                        'Could not create base directory ' . $base . '',
+                        E_USER_WARNING
+                    );
+                    return false;
+                }
+            }
+            
+            if (!$this->_testPermissions($base, $chmod)) {
                 return false;
             }
+            
             if (!@mkdir($directory, $chmod) && !is_dir($directory)) {
                 trigger_error(
                     'Could not create directory ' . $directory . '',
@@ -245,13 +248,9 @@ class HTMLPurifier_DefinitionCache_Serializer extends HTMLPurifier_DefinitionCac
                 );
                 return false;
             }
-            if (!$this->_testPermissions($directory, $chmod)) {
-                return false;
-            }
-        } elseif (!$this->_testPermissions($directory, $chmod)) {
-            return false;
         }
-        return true;
+        
+        return $this->_testPermissions($directory, $chmod);
     }
 
     /**
